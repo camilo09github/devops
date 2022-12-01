@@ -7,48 +7,176 @@ variables:
   MAVEN_CACHE_FOLDER: '$(Pipeline.Workspace)/.m2/repository'
   MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
 
-  pool: default
+pool: 'DevOps'
 
 stages:
-- stage: 'build'
-  displayName: 'Build the Aplication'
+- stage: 'container'
+  displayName: 'Compose sonarqube'
   jobs:
-   - job: 'build'
+   - job: 'soanrqube'
 
      steps:
 
+      - task: DockerCompose@0
+        continueOnError: true
+        inputs:
+          dockerComposeFile: '**/docker-compose.yml'
+          action: 'Run a Docker Compose command'
+          dockerComposeCommand: up -d sonarqube
+      #- script: sleep 40
+
+- stage: servicio_commons
+  jobs:
+  - job: 'Build'
+
+    steps:
       - task: Maven@3
         inputs:
-          mavenPomFile: 'pom.xml'
+          mavenPomFile: 'springboot-servicio-commons/pom.xml'
           mavenOptions: '-Xmx3072m'
-          javaHomeOption: 'JDKVersion'
-          jdkVersionOption: '1.11'
+          javaHomeOption: 'path'
+          jdkDirectory: '/usr/lib/jvm/java-1.8.0-openjdk'
           jdkArchitectureOption: 'x64'
           publishJUnitResults: true
-          testResultsFiles: '**/TEST-*.xml'
-          mavenAuthenticateFeed: true
-          goals: 'package'
-          options: '-X -P azure_artifacts $(MAVEN_OPTS)'
-  
-      - task: CopyFiles@2
-        displayName: 'Copy jar to pipeline artifact'
+          mavenVersionOption: 'Default'
+          mavenAuthenticateFeed: false
+          effectivePomSkip: false
+          sonarQubeRunAnalysis: false
+          goals: 'install'
+        displayName: 'SonarQube springboot-servicio-commons'   
+      - script: cd springboot-servicio-commons && mvn clean package && mvn sonar:sonar -Dsonar.host.url=http://127.0.0.1:9001 -Dsonar.sources=src/main/java
+        
+- stage: servicio_usuarios_commons
+  jobs:
+  - job: 'Build'
+    steps:
+      - task: Maven@3
         inputs:
-          SourceFolder: '$(System.DefaultWorkingDirectory)/target/'
-          Contents: '*.jar'
-          TargetFolder: '$(build.artifactstagingdirectory)/$(buildConfiguration)'
-          CleanTargetFolder: true
-      
-      - task: ArchiveFiles@2
-        inputs:
-          rootFolderOrFile: '$(System.DefaultWorkingDirectory)/target/'
-          includeRootFolder: true
-          archiveType: 'zip'
-          archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-          replaceExistingArchive: true
+          mavenPomFile: 'springboot-servicio-usuarios-commons/pom.xml'
+          mavenOptions: '-Xmx3072m'
+          javaHomeOption: 'path'
+          jdkDirectory: '/usr/lib/jvm/java-1.8.0-openjdk'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          mavenVersionOption: 'Default'
+          mavenAuthenticateFeed: false
+          effectivePomSkip: false
+          sonarQubeRunAnalysis: false
+          goals: 'install'
+        displayName: 'SonarQube springboot-servicio-usuarios-commons'    
 
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish Artifact: realease_package'
-        condition: succeeded()
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: |
+            # copying override file
+            cd springboot-servicio-usuarios-commons
+            mvn install && mvn sonar:sonar -Dsonar.host.url=http://127.0.0.1:9001 -Dsonar.sources=src/main/java
+
+
+- stage: servicio_usuarios
+  jobs:
+  - job: 'Build'
+    steps:
+
+      - task: Maven@3
+        inputs:
+          mavenPomFile: 'springboot-servicio-usuarios/pom.xml'
+          mavenOptions: '-Xmx3072m'
+          javaHomeOption: 'path'
+          jdkDirectory: '/usr/lib/jvm/java-1.8.0-openjdk'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          mavenVersionOption: 'Default'
+          mavenAuthenticateFeed: false
+          effectivePomSkip: false
+          sonarQubeRunAnalysis: false
+          goals: 'install'
+        displayName: 'SonarQube springboot-servicio-usuarios'
+
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: |
+            # copying override file
+            cd springboot-servicio-usuarios
+            mvn install && mvn sonar:sonar -Dsonar.host.url=http://127.0.0.1:9001 -Dsonar.sources=src/main/java
+
+
+- stage: servicio_oauth
+  jobs:
+  - job: 'Build'
+    steps:
+      - task: Maven@3
+        inputs:
+          mavenPomFile: 'springboot-servicio-oauth/pom.xml'
+          mavenOptions: '-Xmx3072m'
+          javaHomeOption: 'path'
+          jdkDirectory: '/usr/lib/jvm/java-1.8.0-openjdk'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          mavenVersionOption: 'Default'
+          mavenAuthenticateFeed: false
+          effectivePomSkip: false
+          sonarQubeRunAnalysis: false
+          goals: 'install'
+        displayName: 'SonarQube springboot-servicio-oauth'
+
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: |
+            # copying override file
+            cd springboot-servicio-oauth
+            mvn install && mvn sonar:sonar -Dsonar.host.url=http://127.0.0.1:9001 -Dsonar.sources=src/main/java
+
+
+- stage: springboot_servicio_mensajes
+  jobs:
+  - job: 'Build'
+    steps:
+      - task: Maven@3
+        inputs:
+          mavenPomFile: 'springboot-servicio-mensajes/pom.xml'
+          mavenOptions: '-Xmx3072m'
+          javaHomeOption: 'path'
+          jdkDirectory: '/usr/lib/jvm/java-1.8.0-openjdk'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          mavenVersionOption: 'Default'
+          mavenAuthenticateFeed: false
+          effectivePomSkip: false
+          sonarQubeRunAnalysis: false
+          goals: 'install'
+        displayName: 'SonarQube springboot-servicio-mensajes'
+
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: |
+            # copying override file
+            cd springboot-servicio-mensajes
+            mvn install && mvn sonar:sonar -Dsonar.host.url=http://127.0.0.1:9001 -Dsonar.sources=src/main/java
+
+
+- stage: springboot_servicio_gateway_server
+  jobs:
+  - job: 'Build'
+    steps:
+      - task: Maven@3
+        inputs:
+          mavenPomFile: 'springboot-servicio-gateway-server/pom.xml'
+          mavenOptions: '-Xmx3072m'
+          javaHomeOption: 'path'
+          jdkDirectory: '/usr/lib/jvm/java-1.8.0-openjdk'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          mavenVersionOption: 'Default'
+          mavenAuthenticateFeed: false
+          effectivePomSkip: false
+          sonarQubeRunAnalysis: false
+          goals: 'install'
+        displayName: 'SonarQube springboot-servicio-gateway-server'
 
 
       - task: Bash@3
@@ -56,12 +184,70 @@ stages:
           targetType: 'inline'
           script: |
             # copying override file
-            mkdir results
-            docker volume create --driver local --opt type=none --opt device=$(System.DefaultWorkingDirectory)/results --opt o=bind results          
+            cd springboot-servicio-gateway-server
+            mvn install && mvn sonar:sonar -Dsonar.host.url=http://127.0.0.1:9001 -Dsonar.sources=src/main/java
+
+
+- stage: servicio_eureka_server
+  jobs:
+  - job: 'Build'
+    steps:
+      - task: Maven@3
+        inputs:
+          mavenPomFile: 'springboot-servicio-eureka-server/pom.xml'
+          mavenOptions: '-Xmx3072m'
+          javaHomeOption: 'path'
+          jdkDirectory: '/usr/lib/jvm/java-1.8.0-openjdk'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          mavenVersionOption: 'Default'
+          mavenAuthenticateFeed: false
+          effectivePomSkip: false
+          sonarQubeRunAnalysis: false
+          goals: 'install'
+        displayName: 'SonarQube springboot-servicio-eureka-server'
+
+
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: |
+            # copying override file
+            cd springboot-servicio-eureka-server
+            mvn install && mvn sonar:sonar -Dsonar.host.url=http://127.0.0.1:9001 -Dsonar.sources=src/main/java
+
+
+- stage: servicio_config_server
+  jobs:
+  - job: 'Build'
+    steps:
+      - task: Maven@3
+        inputs:
+          mavenPomFile: 'springboot-servicio-config-server/pom.xml'
+          mavenOptions: '-Xmx3072m'
+          javaHomeOption: 'path'
+          jdkDirectory: '/usr/lib/jvm/java-1.8.0-openjdk'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          mavenVersionOption: 'Default'
+          mavenAuthenticateFeed: false
+          effectivePomSkip: false
+          sonarQubeRunAnalysis: false
+          goals: 'install'
+        displayName: 'SonarQube springboot-servicio-config-server'
+
+
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: |
+            # copying override file
+            cd springboot-servicio-config-server
+            mvn install && mvn sonar:sonar -Dsonar.host.url=http://127.0.0.1:9001 -Dsonar.sources=src/main/java
       - task: DockerCompose@0
+        displayName: 'Deploying microservices'
         continueOnError: true
         inputs:
           dockerComposeFile: '**/docker-compose.yml'
           action: 'Run a Docker Compose command'
-          dockerComposeCommand: 'up'
-          arguments: '--abort-on-container-exit'
+          dockerComposeCommand: up -d    

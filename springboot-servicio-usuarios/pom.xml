@@ -90,11 +90,12 @@
 	</dependencyManagement>
 
     <build>
+		<pluginManagement>
 		<plugins>
 			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
 			<plugin>
 				<groupId>org.sonarsource.sonar-packaging-maven-plugin</groupId>
 				<artifactId>sonar-packaging-maven-plugin</artifactId>
@@ -109,6 +110,6 @@
 						Properties". -->
 				</configuration></plugin>
 		</plugins>
+		</pluginManagement>
 	</build>
-
 </project>
