@@ -1,0 +1,68 @@
+version: '3'
+
+services:
+  servicio-commons:
+    image: springboot-servicio-commons
+    build:
+      context: ./springboot-servicio-commons
+      dockerfile: Dockerfile
+    volumes:
+      - /data/spring-boot-app
+  
+  servicio-config-server:
+    image: springboot-servicio-config-server
+    build:
+      context: ./springboot-servicio-config-server
+      dockerfile: Dockerfile
+    ports:
+      - 8888:8888
+    volumes:
+      - /tmp
+
+  servicio-eureka-server:
+    image: springboot-servicio-eureka-server
+    build:
+      context: ./springboot-servicio-eureka-server
+      dockerfile: Dockerfile
+    ports:
+      - 8761:8761
+    volumes:
+      - /tmp
+  
+  servicio-mensajes:
+    image: springboot-servicio-mensajes
+    build:
+      context: ./springboot-servicio-mensajes
+      dockerfile: Dockerfile
+    volumes:
+      - /tmp
+
+  servicio-oauth:
+    image: springboot-servicio-oauth
+    build:
+      context: ./springboot-servicio-oauth
+      dockerfile: Dockerfile
+    volumes:
+      - /tmp
+  
+  servicio-usuarios:
+    image: springboot-servicio-usuarios
+    build:
+      context: ./springboot-servicio-usuarios
+      dockerfile: Dockerfile
+    volumes:
+      - /tmp
+
+  servicio-usuarios-commons:
+    image: springboot-servicio-usuarios-commons
+    build:
+      context: ./springboot-servicio-usuarios-commons
+      dockerfile: Dockerfile
+    volumes:
+      - /tmp
+
+  sonarqube:
+    image: fperezpa/mulesonarqube:7.7.3
+    ports:
+      - 9001:9000
+      - 9092:9092

@@ -1,0 +1,67 @@
+trigger:
+- master
+- development
+
+variables:    
+  buildConfiguration: 'Release'
+  MAVEN_CACHE_FOLDER: '$(Pipeline.Workspace)/.m2/repository'
+  MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+
+  pool: default
+
+stages:
+- stage: 'build'
+  displayName: 'Build the Aplication'
+  jobs:
+   - job: 'build'
+
+     steps:
+
+      - task: Maven@3
+        inputs:
+          mavenPomFile: 'pom.xml'
+          mavenOptions: '-Xmx3072m'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '1.11'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          testResultsFiles: '**/TEST-*.xml'
+          mavenAuthenticateFeed: true
+          goals: 'package'
+          options: '-X -P azure_artifacts $(MAVEN_OPTS)'
+  
+      - task: CopyFiles@2
+        displayName: 'Copy jar to pipeline artifact'
+        inputs:
+          SourceFolder: '$(System.DefaultWorkingDirectory)/target/'
+          Contents: '*.jar'
+          TargetFolder: '$(build.artifactstagingdirectory)/$(buildConfiguration)'
+          CleanTargetFolder: true
+      
+      - task: ArchiveFiles@2
+        inputs:
+          rootFolderOrFile: '$(System.DefaultWorkingDirectory)/target/'
+          includeRootFolder: true
+          archiveType: 'zip'
+          archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+          replaceExistingArchive: true
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: realease_package'
+        condition: succeeded()
+
+
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: |
+            # copying override file
+            mkdir results
+            docker volume create --driver local --opt type=none --opt device=$(System.DefaultWorkingDirectory)/results --opt o=bind results          
+      - task: DockerCompose@0
+        continueOnError: true
+        inputs:
+          dockerComposeFile: '**/docker-compose.yml'
+          action: 'Run a Docker Compose command'
+          dockerComposeCommand: 'up'
+          arguments: '--abort-on-container-exit'
